@@ -10,7 +10,7 @@ const { getAllUsers, createUser, getUserByUsername, updateUserAvatar } = require
 // Multer 설정
 const storage = multer.diskStorage({
     destination: function (req, file, callback) {
-        callback(null, 'uploads/avatars/');
+        callback(null, `uploads/avatars/`);
     },
     filename: function (req, file, callback) {
         const { id } = req.params;

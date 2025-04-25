@@ -82,7 +82,7 @@ const updateUserAvatar = async (req, res) => {
             return createErrorResponse(res, 404, "사용자를 찾을 수 없습니다.");
         }
 
-        const avatarPath = `/uploads/avatars/${req.file.filename}`;
+        const avatarPath = `/uploads/${id}avatars/${req.file.filename}`;
         await query(
             'UPDATE users SET avatar = ? WHERE id = ?',
             [avatarPath, id]
