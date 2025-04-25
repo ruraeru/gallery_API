@@ -6,6 +6,13 @@ const createErrorResponse = (res, status, message) => {
     });
 };
 
+const successResponse = (res, data, status = 200) => {
+    return res.status(status).json({
+        success: true,
+        data
+    });
+}
+
 // 성공 응답 생성 함수
 const createSuccessResponse = (res, data, status = 200) => {
     return res.status(status).json({
@@ -37,6 +44,7 @@ const handleFileUploadError = (error, res) => {
 };
 
 module.exports = {
+    successResponse,
     createErrorResponse,
     createSuccessResponse,
     handleDatabaseError,

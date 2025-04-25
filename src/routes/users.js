@@ -4,18 +4,31 @@ const { pool, query } = require('../config/database');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
-const { createErrorResponse, createSuccessResponse, handleDatabaseError, handleFileUploadError } = require('../middleware/errorHandler');
+const fs = require('fs');
 const { getAllUsers, createUser, getUserByUsername, updateUserAvatar } = require('../controllers/userController');
 
 // Multer 설정
 const storage = multer.diskStorage({
     destination: function (req, file, callback) {
-        callback(null, `uploads/avatars/`);
+        const { id } = req.params;
+        const userDir = `uploads/${id}`;
+        const avatarDir = `${userDir}/avatar`;
+
+        // 사용자 디렉토리 생성
+        if (!fs.existsSync(userDir)) {
+            fs.mkdirSync(userDir, { recursive: true });
+        }
+        // avatar 디렉토리 생성
+        if (!fs.existsSync(avatarDir)) {
+            fs.mkdirSync(avatarDir, { recursive: true });
+        }
+
+        callback(null, avatarDir);
     },
     filename: function (req, file, callback) {
-        const { id } = req.params;
         const ext = path.extname(file.originalname);
-        callback(null, `avatar-${id}${ext}`);
+        console.log(ext)
+        callback(null, `avatar${ext}`);
     }
 });
 
@@ -30,7 +43,7 @@ const upload = multer({
         const mimetype = allowedTypes.test(file.mimetype);
 
         if (extname && mimetype) {
-            return cb(null, true);
+            return callback(null, true);
         } else {
             callback(new Error('이미지 파일만 업로드 가능합니다!'));
         }
@@ -41,6 +54,6 @@ const upload = multer({
 router.get('/users', getAllUsers);
 router.post('/users', createUser);
 router.get('/users/:username', getUserByUsername);
-router.put('/:id/avatar', upload.single('avatar'), updateUserAvatar);
+router.put('/users/:id/avatar', upload.single('avatar'), updateUserAvatar);
 
 module.exports = router; 

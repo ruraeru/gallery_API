@@ -1,14 +1,15 @@
-const { pool, query } = require('../config/database');
 const bcrypt = require('bcrypt');
 const { createErrorResponse, createSuccessResponse, handleDatabaseError } = require('../middleware/errorHandler');
+const User = require('../models/User');
 
 // 모든 사용자 조회
 const getAllUsers = async (req, res) => {
     try {
-        const [users] = await pool.promise().query(
-            'SELECT id, username, license, avatar, created_at from users ORDER BY created_at DESC'
-        );
-        return createSuccessResponse(res, users);
+        const users = await User.findAll({
+            attributes: ['id', 'username', 'license', 'avatar', 'created_at'],
+            order: [['created_at', 'DESC']]
+        });
+        return createSuccessResponse(res, users.map(user => user.get({ plain: true })));
     } catch (error) {
         return handleDatabaseError(error, res);
     }
@@ -23,22 +24,24 @@ const createUser = async (req, res) => {
     }
 
     try {
-        const existingUsers = await query(
-            "SELECT * FROM users WHERE username = ?",
-            [username]
-        );
+        const existingUser = await User.findOne({ where: { username } });
 
-        if (existingUsers && existingUsers.length > 0) {
+        if (existingUser) {
             return createErrorResponse(res, 400, "이미 사용 중인 username입니다.");
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await query(
-            "INSERT INTO users (id, username, password, license) VALUES (?, ?, ?, ?)",
-            [id, username, hashedPassword, 1]
-        );
+        const user = await User.create({
+            id,
+            username,
+            password: hashedPassword,
+            license: 1
+        });
 
-        return createSuccessResponse(res, { id: result.insertId, username }, 201);
+        const userData = user.get({ plain: true });
+        console.log("생성된 유저:", userData);
+
+        return createSuccessResponse(res, { id: userData.id, username: userData.username }, 201);
     } catch (error) {
         return handleDatabaseError(error, res);
     }
@@ -49,16 +52,16 @@ const getUserByUsername = async (req, res) => {
     const { username } = req.params;
 
     try {
-        const [user] = await pool.promise().query(
-            'SELECT id, username, avatar, created_at FROM users WHERE username=?',
-            [username]
-        );
+        const user = await User.findOne({
+            where: { username },
+            attributes: ['id', 'username', 'avatar', 'created_at']
+        });
 
-        if (user.length === 0) {
+        if (!user) {
             return createErrorResponse(res, 404, "사용자를 찾을 수 없습니다.");
         }
 
-        return createSuccessResponse(res, user);
+        return createSuccessResponse(res, user.get({ plain: true }));
     } catch (error) {
         return handleDatabaseError(error, res);
     }
@@ -73,20 +76,14 @@ const updateUserAvatar = async (req, res) => {
     }
 
     try {
-        const [user] = await pool.promise().query(
-            'SELECT * FROM users WHERE id = ?',
-            [id]
-        );
+        const user = await User.findByPk(id);
 
-        if (!user || user.length === 0) {
+        if (!user) {
             return createErrorResponse(res, 404, "사용자를 찾을 수 없습니다.");
         }
 
-        const avatarPath = `/uploads/${id}avatars/${req.file.filename}`;
-        await query(
-            'UPDATE users SET avatar = ? WHERE id = ?',
-            [avatarPath, id]
-        );
+        const avatarPath = `/uploads/${id}/avatar/${req.file.filename}`;
+        await user.update({ avatar: avatarPath });
 
         return createSuccessResponse(res, { id, avatar: avatarPath });
     } catch (error) {
