@@ -41,7 +41,7 @@ router.get('/users', async (req, res) => {
         const [users] = await pool.promise().query(
             'SELECT id, username, license, avatar, created_at from users ORDER BY created_at DESC'
         );
-        console.log("조회된 사용자: ", users);
+        // console.log("조회된 사용자: ", users);
         res.json({ success: true, data: users });
     } catch (error) {
         console.error('사용자 조회 중 에러 발생:', error.sqlMessage);
@@ -100,7 +100,28 @@ router.post('/users', async (req, res) => {
     }
 });
 
-router.get('/users/:id',)
+router.get('/users/:id', async (req, res) => {
+    console.log(`GET /api/users/${req.params.id}`);
+    const { id } = req.params;
+
+    try {
+        const [user] = await pool.promise().query(
+            'SELECT id, username, license, avatar, created_at FROM users WHERE id=?',
+            [id]
+        );
+        return res.status(201).json({
+            success: true,
+            data: user
+        });
+    }
+    catch (error) {
+        console.error("에러 발생:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 // 사용자 avatar 업데이트 (파일 업로드)
 router.put('/:id/avatar', upload.single('avatar'), async (req, res) => {
