@@ -100,15 +100,19 @@ router.post('/users', async (req, res) => {
     }
 });
 
-router.get('/users/:id', async (req, res) => {
-    console.log(`GET /api/users/${req.params.id}`);
-    const { id } = req.params;
+//특정 유저 조회
+router.get('/users/:username', async (req, res) => {
+    console.log(`GET /api/users/${req.params.username}`);
+    const { username } = req.params;
 
     try {
         const [user] = await pool.promise().query(
-            'SELECT id, username, license, avatar, created_at FROM users WHERE id=?',
-            [id]
+            'SELECT id, username, license, avatar, created_at FROM users WHERE username=?',
+            [username]
         );
+        if (user.length === 0) {
+            return res.status(404).json({ success: false, error: "사용자를 찾을 수 없습니다." });
+        }
         return res.status(201).json({
             success: true,
             data: user
