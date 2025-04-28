@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { pool, query } = require('../config/database');
-const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getAllUsers, createUser, getUserByUsername, updateUserAvatar } = require('../controllers/userController');
+const { getAllUsers, createUser, getUserByUsername, updateUserAvatar } = require('./userController');
+const { IMAGE_TYPE_ERR } = require('../../config/errorCode');
 
 // Multer 설정
 const storage = multer.diskStorage({
@@ -27,7 +26,6 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, callback) {
         const ext = path.extname(file.originalname);
-        console.log(ext)
         callback(null, `avatar${ext}`);
     }
 });
@@ -35,7 +33,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB 제한
+        fileSize: "50mb"
     },
     fileFilter: function (req, file, callback) {
         const allowedTypes = /jpeg|jpg|png|gif/;
@@ -45,15 +43,15 @@ const upload = multer({
         if (extname && mimetype) {
             return callback(null, true);
         } else {
-            callback(new Error('이미지 파일만 업로드 가능합니다!'));
+            callback(new Error(IMAGE_TYPE_ERR.message));
         }
     }
 });
 
 // 라우트 설정
-router.get('/users', getAllUsers);
-router.post('/users', createUser);
-router.get('/users/:username', getUserByUsername);
-router.put('/users/:id/avatar', upload.single('avatar'), updateUserAvatar);
+router.get('/', getAllUsers);
+router.post('/', createUser);
+router.get('/:username', getUserByUsername);
+router.put('/:id/avatar', upload.single('avatar'), updateUserAvatar);
 
-module.exports = router; 
+module.exports = router;

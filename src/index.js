@@ -40,8 +40,9 @@ sequelize.authenticate()
     });
 
 // 라우터 설정
-const usersRouter = require('./routes/users');
-app.use('/api', usersRouter);
+// const usersRouter = require('./routes/users');
+const router = require('./routes');
+app.use('/api', router);
 
 // 기본 라우트
 app.get('/', (req, res) => {
